@@ -1,0 +1,1636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shimano Drivetrain Visualizer & Shifting Explainer</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Outfit & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  
+  <style>
+    body {
+      font-family: 'Outfit', sans-serif;
+      background-color: #09090b; /* zinc-950 */
+    }
+    .font-mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #18181b;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #3f3f46;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #52525b;
+    }
+    /* Neon Glows */
+    .glow-blue {
+      box-shadow: 0 0 15px rgba(14, 165, 233, 0.15);
+      border-color: rgba(14, 165, 233, 0.4);
+    }
+    .glow-green {
+      box-shadow: 0 0 15px rgba(16, 185, 129, 0.15);
+      border-color: rgba(16, 185, 129, 0.4);
+    }
+    .glow-amber {
+      box-shadow: 0 0 15px rgba(245, 158, 11, 0.15);
+      border-color: rgba(245, 158, 11, 0.4);
+    }
+    .glow-red {
+      box-shadow: 0 0 15px rgba(239, 68, 68, 0.3);
+      border-color: rgba(239, 68, 68, 0.6);
+      animation: pulse-red 2s infinite;
+    }
+    @keyframes pulse-red {
+      0%, 100% { box-shadow: 0 0 15px rgba(239, 68, 68, 0.2); border-color: rgba(239, 68, 68, 0.4); }
+      50% { box-shadow: 0 0 25px rgba(239, 68, 68, 0.5); border-color: rgba(239, 68, 68, 0.8); }
+    }
+    /* Shifter Levers */
+    .lever-active {
+      transform: scale(0.95);
+      filter: brightness(1.2);
+    }
+  </style>
+</head>
+<body class="text-zinc-100 min-h-screen flex flex-col selection:bg-sky-500 selection:text-white overflow-x-hidden">
+
+  <!-- Header -->
+  <header class="border-b border-zinc-800 bg-zinc-900/80 backdrop-blur-md sticky top-0 z-50 px-6 py-4 flex flex-wrap justify-between items-center gap-4">
+    <div class="flex items-center gap-3">
+      <div class="h-8 w-8 rounded-lg bg-sky-500 flex items-center justify-center font-bold text-black tracking-wider text-sm shadow-lg shadow-sky-500/20">S</div>
+      <div>
+        <h1 class="text-lg font-bold tracking-tight text-white flex items-center gap-2">
+          SHIMANO <span class="text-sky-400 font-medium">Drivetrain Lab</span>
+        </h1>
+        <p class="text-xs text-zinc-400">Interactive Front & Rear Derailleur Mechanics Visualizer</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-4">
+      <!-- Mute button -->
+      <button id="btn-sound" onclick="toggleSound()" class="p-2 rounded-lg bg-zinc-800 border border-zinc-700 hover:bg-zinc-700 transition flex items-center gap-2 text-sm text-zinc-300">
+        <svg id="icon-sound-on" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+        </svg>
+        <svg id="icon-sound-off" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15zm12.828-9.9a1 1 0 111.414 1.414L16.414 10l3.414 3.414a1 1 0 01-1.414 1.414L15 11.414l-3.414 3.414a1 1 0 01-1.414-1.414L13.586 10l-3.414-3.414a1 1 0 011.414-1.414L15 8.586l3.414-3.414z" />
+        </svg>
+        <span id="text-sound-status">Sound: On</span>
+      </button>
+      <a href="#challenges-section" class="px-3 py-2 rounded-lg bg-sky-500 hover:bg-sky-400 text-black font-semibold text-xs tracking-wide uppercase shadow-lg shadow-sky-500/20 transition-all duration-300">
+        Try Challenges
+      </a>
+    </div>
+  </header>
+
+  <!-- Main Layout -->
+  <main class="flex-grow p-4 lg:p-6 grid grid-cols-1 xl:grid-cols-3 gap-6 max-w-[1700px] mx-auto w-full">
+    
+    <!-- Left + Middle Columns: Visualizers -->
+    <div class="xl:col-span-2 flex flex-col gap-6">
+      
+      <!-- Visualizer Card -->
+      <div class="bg-zinc-900/60 border border-zinc-800 rounded-2xl p-4 md:p-6 backdrop-blur-md flex flex-col gap-4 relative overflow-hidden transition-all duration-500 glow-blue" id="main-visualizer-card">
+        <!-- Dashboard Overlay Status -->
+        <div class="absolute top-4 right-4 flex items-center gap-2 z-10">
+          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-zinc-800 text-zinc-400 border border-zinc-700" id="badge-groupset-name">
+            Shimano Tiagra / 105
+          </span>
+          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" id="badge-chain-status">
+            Smooth Sailing
+          </span>
+        </div>
+
+        <h2 class="text-sm font-semibold tracking-wider text-zinc-400 uppercase">Interactive Drivetrain Profile</h2>
+        
+        <!-- SVG Drivetrain Visualizer -->
+        <div class="w-full bg-zinc-950/70 rounded-xl border border-zinc-800/80 overflow-hidden relative min-h-[300px] md:min-h-[400px] flex items-center justify-center">
+          <!-- Loading placeholder / Interactive SVG -->
+          <svg id="svg-drivetrain" viewBox="0 0 800 400" class="w-full h-full select-none cursor-default">
+            <defs>
+              <!-- Metallic Gradients -->
+              <linearGradient id="metal-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#71717a" />
+                <stop offset="50%" stop-color="#d4d4d8" />
+                <stop offset="100%" stop-color="#27272a" />
+              </linearGradient>
+              <linearGradient id="active-metal-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#0ea5e9" />
+                <stop offset="50%" stop-color="#38bdf8" />
+                <stop offset="100%" stop-color="#0369a1" />
+              </linearGradient>
+              <linearGradient id="derailleur-body-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#18181b" />
+                <stop offset="100%" stop-color="#3f3f46" />
+              </linearGradient>
+              <!-- Glow Filters -->
+              <filter id="glow-effect" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur stdDeviation="5" result="blur" />
+                <feComposite in="SourceGraphic" in2="blur" operator="over" />
+              </filter>
+            </defs>
+
+            <!-- Background Grid Lines for Technical Vibe -->
+            <g opacity="0.03" stroke="#ffffff" stroke-width="1">
+              <line x1="0" y1="50" x2="800" y2="50" />
+              <line x1="0" y1="100" x2="800" y2="100" />
+              <line x1="0" y1="150" x2="800" y2="150" />
+              <line x1="0" y1="200" x2="800" y2="200" />
+              <line x1="0" y1="250" x2="800" y2="250" />
+              <line x1="0" y1="300" x2="800" y2="300" />
+              <line x1="0" y1="350" x2="800" y2="350" />
+              <line x1="100" y1="0" x2="100" y2="400" />
+              <line x1="200" y1="0" x2="200" y2="400" />
+              <line x1="300" y1="0" x2="300" y2="400" />
+              <line x1="400" y1="0" x2="400" y2="400" />
+              <line x1="500" y1="0" x2="500" y2="400" />
+              <line x1="600" y1="0" x2="600" y2="400" />
+              <line x1="700" y1="0" x2="700" y2="400" />
+            </g>
+
+            <!-- Frame Stays (Visual Bicycle Frame Parts) -->
+            <path d="M 200 200 L 650 200 M 200 200 L 150 100 M 200 200 L 320 60 L 650 200" stroke="#1f2937" stroke-width="6" stroke-linecap="round" fill="none" opacity="0.6"/>
+            <!-- Bottom Bracket shell -->
+            <circle cx="650" cy="200" r="24" fill="#18181b" stroke="#374151" stroke-width="4" />
+            <!-- Rear axle dropout -->
+            <circle cx="200" cy="200" r="10" fill="#18181b" stroke="#374151" stroke-width="3" />
+
+            <!-- 1. CASSETTE (Rear Cogs) Group -->
+            <g id="cassette-group"></g>
+
+            <!-- 2. CHAINRINGS (Front) Group -->
+            <g id="chainrings-group"></g>
+
+            <!-- 3. FRONT DERAILLEUR Group -->
+            <g id="front-derailleur" class="transition-transform duration-300">
+              <!-- FD Body bracket mounted above active chainring -->
+              <path d="M 640 100 L 640 130 Q 640 140 630 140 L 620 140" stroke="#4b5563" stroke-width="4" fill="none" stroke-linecap="round"/>
+              <!-- FD Metal Guide Cage -->
+              <rect id="fd-cage" x="612" y="120" width="16" height="45" rx="4" fill="none" stroke="#9ca3af" stroke-width="3.5" opacity="0.9" />
+              <line x1="620" y1="120" x2="620" y2="165" stroke="#0ea5e9" stroke-width="2" id="fd-cage-highlight" opacity="0" />
+            </g>
+
+            <!-- 4. REAR DERAILLEUR Parallelogram Mechanism -->
+            <g id="rear-derailleur-body">
+              <!-- B-Knuckle mount on frame dropout -->
+              <rect x="188" y="195" width="14" height="22" rx="4" fill="#3f3f46" stroke="#27272a" stroke-width="2" />
+              <!-- Linkage bars -->
+              <line id="rd-link1" x1="195" y1="205" x2="210" y2="240" stroke="#52525b" stroke-width="4" stroke-linecap="round" />
+              <line id="rd-link2" x1="202" y1="205" x2="217" y2="240" stroke="#3f3f46" stroke-width="4" stroke-linecap="round" />
+              <!-- P-Knuckle joint -->
+              <circle id="rd-p-knuckle" cx="213" cy="240" r="8" fill="#27272a" stroke="#52525b" stroke-width="2" />
+            </g>
+
+            <!-- 5. DERAILLEUR CAGE & PULLEYS (Dynamically Rotated/Positioned) -->
+            <g id="derailleur-cage-group">
+              <!-- Cage metal backplate -->
+              <path id="rd-cage-plate" d="M 213 240 L 200 300" stroke="#52525b" stroke-width="8" stroke-linecap="round" opacity="0.9"/>
+              <path id="rd-cage-plate-front" d="M 213 240 L 200 300" stroke="#a1a1aa" stroke-width="4" stroke-linecap="round" opacity="0.9"/>
+              
+              <!-- Guide Pulley (Upper) -->
+              <g id="pulley-guide">
+                <circle cx="213" cy="240" r="14" fill="#18181b" stroke="#71717a" stroke-width="3" />
+                <circle cx="213" cy="240" r="6" fill="#3f3f46" />
+                <!-- Pulley teeth -->
+                <path d="M 213 222 L 213 228 M 213 252 L 213 258 M 201 228 L 205 233 M 225 247 L 229 252 M 198 240 L 204 240 M 222 240 L 228 240 M 201 252 L 205 247 M 225 233 L 229 228" stroke="#52525b" stroke-width="2" />
+              </g>
+              
+              <!-- Tension Pulley (Lower) -->
+              <g id="pulley-tension">
+                <circle cx="200" cy="300" r="14" fill="#18181b" stroke="#71717a" stroke-width="3" />
+                <circle cx="200" cy="300" r="6" fill="#3f3f46" />
+                <!-- Pulley teeth -->
+                <path d="M 200 282 L 200 288 M 200 312 L 200 318 M 188 288 L 192 293 M 212 307 L 216 312 M 185 300 L 191 300 M 209 300 L 215 300 M 188 312 L 192 307 M 212 293 L 216 288" stroke="#52525b" stroke-width="2" />
+              </g>
+            </g>
+
+            <!-- 6. CONNECTING CHAIN (Animated Path) -->
+            <!-- Background shadow chain path for thickness -->
+            <path id="chain-path-bg" d="" fill="none" stroke="#27272a" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" opacity="0.8"/>
+            <!-- Foreground animated link chain path -->
+            <path id="chain-path" d="" fill="none" stroke="#38bdf8" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="8,6" style="transition: stroke 0.3s; stroke-dashoffset: 0;" />
+          </svg>
+          
+          <!-- Shift Sparks / Flash Effect -->
+          <div id="shift-flash" class="absolute inset-0 bg-sky-500/10 pointer-events-none opacity-0 transition-opacity duration-150"></div>
+        </div>
+      </div>
+
+      <!-- Top-Down Cross-Chaining Alignment Card -->
+      <div class="bg-zinc-900/60 border border-zinc-800 rounded-2xl p-4 md:p-6 backdrop-blur-md flex flex-col gap-4">
+        <div class="flex justify-between items-center">
+          <h2 class="text-sm font-semibold tracking-wider text-zinc-400 uppercase">Top-Down Chainline Alignment</h2>
+          <span id="txt-angle-degrees" class="font-mono text-xs font-semibold px-2 py-0.5 rounded bg-zinc-800 text-sky-400">Angle: 0.0°</span>
+        </div>
+        <p class="text-xs text-zinc-400 -mt-2">Visualizes the lateral angle of the chain. Extreme diagonal angles cause friction, noise, and wear.</p>
+        
+        <div class="w-full bg-zinc-950/70 rounded-xl border border-zinc-800/80 p-2 overflow-hidden flex items-center justify-center min-h-[120px]">
+          <svg id="svg-topdown" viewBox="0 0 600 120" class="w-full h-full select-none">
+            <!-- Frame Centerline -->
+            <line x1="50" y1="30" x2="550" y2="30" stroke="#27272a" stroke-dasharray="4,4" stroke-width="1.5"/>
+            <text x="50" y="20" fill="#52525b" font-size="9" font-family="monospace">FRAME CENTERLINE</text>
+            
+            <!-- Rear axle in top view -->
+            <line x1="120" y1="10" x2="120" y2="110" stroke="#3f3f46" stroke-width="3" stroke-linecap="round"/>
+            <text x="75" y="105" fill="#52525b" font-size="9" font-family="monospace">REAR HUB</text>
+            
+            <!-- Front BB axis -->
+            <line x1="480" y1="10" x2="480" y2="110" stroke="#3f3f46" stroke-width="3" opacity="0.3" stroke-linecap="round"/>
+            
+            <!-- Cassette cogs (rendered as vertical lines of different widths) -->
+            <g id="topdown-cogs"></g>
+            
+            <!-- Chainrings (rendered as vertical lines) -->
+            <g id="topdown-chainrings"></g>
+
+            <!-- Front Derailleur cage indicator -->
+            <path id="topdown-fd-cage" d="M 465 65 L 495 65" stroke="#9ca3af" stroke-width="5" stroke-linecap="round" fill="none" opacity="0.8"/>
+            <circle id="topdown-fd-rub" cx="480" cy="65" r="5" fill="#ef4444" filter="url(#glow-effect)" opacity="0" />
+
+            <!-- Chain line (Top-down) -->
+            <line id="topdown-chain" x1="120" y1="50" x2="480" y2="80" stroke="#38bdf8" stroke-width="3.5" stroke-linecap="round" style="transition: stroke 0.3s, y1 0.3s, y2 0.3s;"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column: Controls & Analytics -->
+    <div class="flex flex-col gap-6">
+      
+      <!-- 1. Groupset Selector Card -->
+      <div class="bg-zinc-900/60 border border-zinc-800 rounded-2xl p-5 backdrop-blur-md flex flex-col gap-3">
+        <h2 class="text-sm font-semibold tracking-wider text-zinc-400 uppercase">Shimano Groupset</h2>
+        <div class="grid grid-cols-1 gap-2.5" id="groupset-buttons-container">
+          <!-- Populated by JS -->
+        </div>
+        <p id="groupset-details-text" class="text-xs text-zinc-400 mt-2 bg-zinc-950/40 border border-zinc-800/60 p-3 rounded-lg leading-relaxed">
+          Select a groupset to explore different gear ratios and derailleur alignments.
+        </p>
+      </div>
+
+      <!-- 2. Interactive Shifters & Cadence Controls -->
+      <div class="bg-zinc-900/60 border border-zinc-800 rounded-2xl p-5 backdrop-blur-md flex flex-col gap-5">
+        <h2 class="text-sm font-semibold tracking-wider text-zinc-400 uppercase">Cockpit Controls</h2>
+        
+        <!-- Shifters Grid -->
+        <div class="grid grid-cols-2 gap-4">
+          <!-- Left Shifter (Front Derailleur) -->
+          <div class="bg-zinc-950/80 rounded-xl border border-zinc-800/80 p-4 flex flex-col items-center gap-3 relative" id="left-shifter-card">
+            <span class="text-xs font-semibold tracking-widest text-zinc-500 uppercase">Front Shifter</span>
+            <!-- Gear indicator dial -->
+            <div class="flex items-center gap-1.5 bg-zinc-900 px-3 py-1 rounded-full border border-zinc-800">
+              <span class="text-2xs text-zinc-500 font-mono">RING:</span>
+              <span id="indicator-front-gear" class="font-mono font-bold text-sky-400 text-sm">2</span>
+            </div>
+            <!-- Interactive Shifter buttons resembling STI levers -->
+            <div class="flex flex-col gap-2 w-full mt-1">
+              <button onclick="shiftFront(1)" id="btn-front-up" class="w-full py-2.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 active:bg-sky-500/20 active:border-sky-500/35 border border-zinc-700 transition font-medium text-xs flex justify-center items-center gap-1.5 text-zinc-200">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7" />
+                </svg>
+                Lever A (Upshift)
+              </button>
+              <button onclick="shiftFront(-1)" id="btn-front-down" class="w-full py-2.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 active:bg-sky-500/20 active:border-sky-500/35 border border-zinc-700 transition font-medium text-xs flex justify-center items-center gap-1.5 text-zinc-200">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" />
+                </svg>
+                Lever B (Downshift)
+              </button>
+            </div>
+          </div>
+
+          <!-- Right Shifter (Rear Derailleur) -->
+          <div class="bg-zinc-950/80 rounded-xl border border-zinc-800/80 p-4 flex flex-col items-center gap-3">
+            <span class="text-xs font-semibold tracking-widest text-zinc-500 uppercase">Rear Shifter</span>
+            <!-- Gear indicator dial -->
+            <div class="flex items-center gap-1.5 bg-zinc-900 px-3 py-1 rounded-full border border-zinc-800">
+              <span class="text-2xs text-zinc-500 font-mono">COG:</span>
+              <span id="indicator-rear-gear" class="font-mono font-bold text-emerald-400 text-sm">10</span>
+            </div>
+            <!-- Interactive Shifter buttons -->
+            <div class="flex flex-col gap-2 w-full mt-1">
+              <!-- Upshift = smaller cog = harder gear = shift down index -->
+              <!-- Downshift = larger cog = easier gear = shift up index -->
+              <button onclick="shiftRear(-1)" id="btn-rear-up" class="w-full py-2.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 active:bg-emerald-500/20 active:border-emerald-500/35 border border-zinc-700 transition font-medium text-xs flex justify-center items-center gap-1.5 text-zinc-200">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7" />
+                </svg>
+                Lever A (Harder)
+              </button>
+              <button onclick="shiftRear(1)" id="btn-rear-down" class="w-full py-2.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 active:bg-emerald-500/20 active:border-emerald-500/35 border border-zinc-700 transition font-medium text-xs flex justify-center items-center gap-1.5 text-zinc-200">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" />
+                </svg>
+                Lever B (Easier)
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pedaling Cadence Control -->
+        <div class="flex flex-col gap-2">
+          <div class="flex justify-between items-center text-xs">
+            <span class="font-semibold text-zinc-400 uppercase tracking-wider">Pedal Cadence (Legs Speed)</span>
+            <span id="text-cadence" class="font-mono font-bold text-sky-400">90 RPM</span>
+          </div>
+          <div class="flex gap-2">
+            <button onclick="setCadence(0)" id="btn-cadence-0" class="flex-1 py-1.5 rounded-lg border border-zinc-800 text-xs font-semibold transition hover:bg-zinc-800">STOP</button>
+            <button onclick="setCadence(60)" id="btn-cadence-60" class="flex-1 py-1.5 rounded-lg border border-zinc-800 text-xs font-semibold transition hover:bg-zinc-800">SLOW (60)</button>
+            <button onclick="setCadence(90)" id="btn-cadence-90" class="flex-1 py-1.5 rounded-lg border border-zinc-800 text-xs font-semibold transition hover:bg-zinc-800 bg-sky-500/10 border-sky-500/30 text-sky-400">MED (90)</button>
+            <button onclick="setCadence(120)" id="btn-cadence-120" class="flex-1 py-1.5 rounded-lg border border-zinc-800 text-xs font-semibold transition hover:bg-zinc-800">FAST (120)</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. Ride Status Dashboard -->
+      <div class="bg-zinc-900/60 border border-zinc-800 rounded-2xl p-5 backdrop-blur-md flex flex-col gap-4" id="dashboard-card">
+        <h2 class="text-sm font-semibold tracking-wider text-zinc-400 uppercase">Ride Status Dashboard</h2>
+        
+        <!-- Live Gauges -->
+        <div class="grid grid-cols-2 gap-4">
+          <!-- Speed Gauge -->
+          <div class="bg-zinc-950/60 border border-zinc-800/80 rounded-xl p-3 flex flex-col items-center">
+            <span class="text-3xs text-zinc-500 uppercase tracking-widest font-semibold mb-1">Estimated Speed</span>
+            <div class="relative flex items-center justify-center h-16 w-full">
+              <!-- Radial gauge back -->
+              <svg class="w-16 h-16 transform -rotate-90">
+                <circle cx="32" cy="32" r="26" fill="transparent" stroke="#18181b" stroke-width="5" />
+                <circle id="gauge-speed-fill" cx="32" cy="32" r="26" fill="transparent" stroke="#0ea5e9" stroke-width="5" stroke-dasharray="163" stroke-dashoffset="80" stroke-linecap="round"/>
+              </svg>
+              <!-- Center text -->
+              <span id="text-speed" class="absolute font-mono font-bold text-sm text-white">28.4</span>
+            </div>
+            <span class="text-3xs text-zinc-400 font-mono mt-1">KM/H</span>
+          </div>
+
+          <!-- Torque/Effort Gauge -->
+          <div class="bg-zinc-950/60 border border-zinc-800/80 rounded-xl p-3 flex flex-col items-center">
+            <span class="text-3xs text-zinc-500 uppercase tracking-widest font-semibold mb-1">Leg Effort (Torque)</span>
+            <div class="relative flex items-center justify-center h-16 w-full">
+              <svg class="w-16 h-16 transform -rotate-90">
+                <circle cx="32" cy="32" r="26" fill="transparent" stroke="#18181b" stroke-width="5" />
+                <circle id="gauge-effort-fill" cx="32" cy="32" r="26" fill="transparent" stroke="#10b981" stroke-width="5" stroke-dasharray="163" stroke-dashoffset="120" stroke-linecap="round"/>
+              </svg>
+              <span id="text-effort" class="absolute font-mono font-bold text-xs text-white">MEDIUM</span>
+            </div>
+            <span class="text-3xs text-zinc-400 font-mono mt-1" id="text-gear-ratio">Ratio: 2.27</span>
+          </div>
+        </div>
+
+        <!-- Dynamic Explainer Box -->
+        <div class="p-4 rounded-xl border" id="explainer-box">
+          <h3 id="explainer-title" class="text-sm font-bold text-white flex items-center gap-1.5">
+            Smooth Sailing
+          </h3>
+          <p id="explainer-desc" class="text-xs text-zinc-300 mt-1 leading-relaxed">
+            Ideal for rolling hills and maintaining a steady rhythm. The chain is running straight and efficient.
+          </p>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Section 4: Gamified Challenge Scenarios -->
+  <section id="challenges-section" class="max-w-[1700px] mx-auto w-full p-4 lg:p-6 border-t border-zinc-800 bg-zinc-950/30 flex flex-col gap-6">
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+      <div>
+        <h2 class="text-xl font-bold tracking-tight text-white">Shimano Shifting Academy</h2>
+        <p class="text-sm text-zinc-400">Put your knowledge to the test. Click a scenario, read the description, and shift to the correct gear combo!</p>
+      </div>
+      <div id="challenge-status-banner" class="hidden px-4 py-2 rounded-xl border border-zinc-800 bg-zinc-900/60 items-center gap-3">
+        <div class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping" id="challenge-ping"></div>
+        <span id="txt-challenge-instruction" class="text-xs font-semibold text-zinc-200">Active Challenge...</span>
+        <button onclick="quitChallenge()" class="text-2xs font-bold text-rose-400 hover:text-rose-300 uppercase underline ml-2">Quit</button>
+      </div>
+    </div>
+
+    <!-- Challenges Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+      
+      <!-- Challenge 1 -->
+      <div class="bg-zinc-900/50 border border-zinc-800 hover:border-zinc-700 rounded-xl p-5 flex flex-col justify-between gap-4 transition-all duration-300 relative overflow-hidden group" id="challenge-card-climb">
+        <div class="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+          </svg>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="px-2 py-0.5 rounded text-3xs font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20 uppercase">Climbing</span>
+            <span class="text-3xs text-zinc-500 font-mono">DIFFICULTY: EASY</span>
+          </div>
+          <h3 class="text-base font-bold text-white mt-1.5">The 15% Alpine Wall</h3>
+          <p class="text-xs text-zinc-400 mt-1 leading-relaxed">
+            You encounter an incredibly steep hill on your route. Shift to your easiest gear ratio (Mountain Goat mode) so you can spin up without blowing up your knees.
+          </p>
+        </div>
+        <button onclick="startChallenge('climb')" class="w-full py-2 rounded-lg bg-zinc-800 hover:bg-sky-500 hover:text-black font-semibold text-xs transition duration-300 text-sky-400">
+          Accept Challenge
+        </button>
+      </div>
+
+      <!-- Challenge 2 -->
+      <div class="bg-zinc-900/50 border border-zinc-800 hover:border-zinc-700 rounded-xl p-5 flex flex-col justify-between gap-4 transition-all duration-300 relative overflow-hidden group" id="challenge-card-sprint">
+        <div class="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="px-2 py-0.5 rounded text-3xs font-bold bg-sky-500/10 text-sky-400 border border-sky-500/20 uppercase">Sprint</span>
+            <span class="text-3xs text-zinc-500 font-mono">DIFFICULTY: EASY</span>
+          </div>
+          <h3 class="text-base font-bold text-white mt-1.5">Downhill Descents</h3>
+          <p class="text-xs text-zinc-400 mt-1 leading-relaxed">
+            You are descending a long straight hill and spin out your legs. Shift into the absolute highest gear (Speed Demon mode) to maximize power output and speed.
+          </p>
+        </div>
+        <button onclick="startChallenge('sprint')" class="w-full py-2 rounded-lg bg-zinc-800 hover:bg-sky-500 hover:text-black font-semibold text-xs transition duration-300 text-sky-400">
+          Accept Challenge
+        </button>
+      </div>
+
+      <!-- Challenge 3 -->
+      <div class="bg-zinc-900/50 border border-zinc-800 hover:border-zinc-700 rounded-xl p-5 flex flex-col justify-between gap-4 transition-all duration-300 relative overflow-hidden group" id="challenge-card-rub">
+        <div class="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="px-2 py-0.5 rounded text-3xs font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20 uppercase">Friction</span>
+            <span class="text-3xs text-zinc-500 font-mono">DIFFICULTY: MEDIUM</span>
+          </div>
+          <h3 class="text-base font-bold text-white mt-1.5">The Cross-Chain Trap</h3>
+          <p class="text-xs text-zinc-400 mt-1 leading-relaxed">
+            Oh no! You shifted your road bike into the Big Chainring + Big Cassette Cog. The chain is rubbing, making noise, and wearing down. Re-shift to a straight chainline.
+          </p>
+        </div>
+        <button onclick="startChallenge('rub')" class="w-full py-2 rounded-lg bg-zinc-800 hover:bg-sky-500 hover:text-black font-semibold text-xs transition duration-300 text-sky-400">
+          Accept Challenge
+        </button>
+      </div>
+
+      <!-- Challenge 4 -->
+      <div class="bg-zinc-900/50 border border-zinc-800 hover:border-zinc-700 rounded-xl p-5 flex flex-col justify-between gap-4 transition-all duration-300 relative overflow-hidden group" id="challenge-card-startup">
+        <div class="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="px-2 py-0.5 rounded text-3xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase">Efficiency</span>
+            <span class="text-3xs text-zinc-500 font-mono">DIFFICULTY: HARD</span>
+          </div>
+          <h3 class="text-base font-bold text-white mt-1.5">Stoplight Quick Startup</h3>
+          <p class="text-xs text-zinc-400 mt-1 leading-relaxed">
+            You've stopped at a red light on a flat road in high gear. To accelerate quickly when it turns green, find a medium-easy cruising gear (approx. ratio of 1.7 to 2.1).
+          </p>
+        </div>
+        <button onclick="startChallenge('startup')" class="w-full py-2 rounded-lg bg-zinc-800 hover:bg-sky-500 hover:text-black font-semibold text-xs transition duration-300 text-sky-400">
+          Accept Challenge
+        </button>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="mt-auto border-t border-zinc-900 bg-zinc-950 p-6 flex flex-col md:flex-row justify-between items-center text-xs text-zinc-500 gap-4">
+    <div>
+      <p>© 2026 Shimano Drivetrain Lab. Educational Pair Programming Demonstration.</p>
+    </div>
+    <div class="flex gap-4">
+      <span>Designed with HTML, CSS (Tailwind) & JS</span>
+      <span>•</span>
+      <span>Features Web Audio Shifter Sounds</span>
+    </div>
+  </footer>
+
+  <!-- Confetti Canvas overlay for success states -->
+  <canvas id="confetti-canvas" class="fixed inset-0 pointer-events-none z-50 hidden"></canvas>
+
+  <!-- JavaScript Simulation & Logic -->
+  <script>
+    // ----------------------------------------------------
+    // 1. DATA CONFIGURATION & STATE
+    // ----------------------------------------------------
+    const groupsets = {
+      tourney: {
+        name: "Shimano Tourney / Altus",
+        type: "3x8 Speed (Hybrid/Beginner)",
+        front: [24, 34, 42],
+        rear: [32, 28, 24, 21, 18, 15, 13, 11],
+        description: "Versatile 3x8 setup common on entry-level hybrids and MTBs. Offers a wide range but requires careful gear selection to avoid cross-chaining.",
+        accentColor: "sky",
+        accentClass: "text-sky-400 border-sky-500/30 bg-sky-500/10",
+        btnClass: "hover:border-sky-500 hover:bg-sky-500/5"
+      },
+      tiagra: {
+        name: "Shimano Tiagra / 105",
+        type: "2x11 Speed (Tarmac/Road)",
+        front: [34, 50],
+        rear: [30, 27, 24, 21, 19, 17, 15, 14, 13, 12, 11],
+        description: "Standard road bike 2x11 setup. Features tight steps between rear gears, allowing riders to maintain their perfect pedaling rhythm (cadence).",
+        accentColor: "emerald",
+        accentClass: "text-emerald-400 border-emerald-500/30 bg-emerald-500/10",
+        btnClass: "hover:border-emerald-500 hover:bg-emerald-500/5"
+      },
+      deore: {
+        name: "Shimano Deore / XT",
+        type: "1x12 Speed (Trail/Mountain)",
+        front: [32],
+        rear: [51, 45, 39, 33, 28, 24, 21, 18, 16, 14, 12, 10],
+        description: "Modern 1x12 mountain bike setup. Eliminates the front derailleur entirely for simpler operation and chain security, utilizing a massive rear cassette.",
+        accentColor: "amber",
+        accentClass: "text-amber-400 border-amber-500/30 bg-amber-500/10",
+        btnClass: "hover:border-amber-500 hover:bg-amber-500/5"
+      }
+    };
+
+    let activeGroupsetKey = 'tiagra';
+    let frontIndex = 1; // Default to outer/bigger ring (index 1 of [34, 50])
+    let rearIndex = 10; // Default to smallest cog (index 10 of [11 cogs] -> 11T)
+    let cadence = 90; // RPM
+    let pedaling = true;
+    let soundEnabled = true;
+
+    // Simulation angles for rotation
+    let frontAngle = 0;
+    let rearAngle = 0;
+    let pulleyAngle = 0;
+    let chainOffset = 0;
+
+    // Smooth Interpolated positions for visual derailleurs
+    let fd_x_current = 0;
+    let fd_y_current = 0;
+    let rd_gx_current = 0;
+    let rd_gy_current = 0;
+
+    // Layout configuration
+    const Cxf = 650; // Front chainring X center
+    const Cyf = 200; // Front chainring Y center
+    const Cxr = 200; // Rear cassette X center
+    const Cyr = 200; // Rear cassette Y center
+
+    const RAD_SCALE = 1.7; // Radius multiplier (Teeth * Scale = Radius in px)
+
+    // Audio State
+    let audioCtx = null;
+
+    // Challenge Mode State
+    let activeChallenge = null;
+
+    // Confetti particles
+    let confetti = [];
+    let confettiActive = false;
+
+    // ----------------------------------------------------
+    // 2. AUDIO SYNTHESIS MODULE (Web Audio API)
+    // ----------------------------------------------------
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+    }
+
+    function playShiftSound() {
+      if (!soundEnabled) return;
+      initAudio();
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+
+      const now = audioCtx.currentTime;
+      
+      // 1. "Clack" - Low metal impact (Oscillator pitch sweep)
+      const osc = audioCtx.createOscillator();
+      const oscGain = audioCtx.createGain();
+      osc.connect(oscGain);
+      oscGain.connect(audioCtx.destination);
+
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(600, now);
+      osc.frequency.exponentialRampToValueAtTime(80, now + 0.05);
+
+      oscGain.gain.setValueAtTime(0.12, now);
+      oscGain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+
+      osc.start(now);
+      osc.stop(now + 0.06);
+
+      // 2. "Click" - High metal snap (Highpass noise burst)
+      const bufferSize = audioCtx.sampleRate * 0.02; // 20ms noise
+      const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = Math.random() * 2 - 1;
+      }
+      
+      const noise = audioCtx.createBufferSource();
+      noise.buffer = buffer;
+
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = 'highpass';
+      filter.frequency.value = 1800;
+
+      const noiseGain = audioCtx.createGain();
+      noiseGain.gain.setValueAtTime(0.08, now);
+      noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.02);
+
+      noise.connect(filter);
+      filter.connect(noiseGain);
+      noiseGain.connect(audioCtx.destination);
+
+      noise.start(now);
+      noise.stop(now + 0.02);
+    }
+
+    function toggleSound() {
+      soundEnabled = !soundEnabled;
+      const onIcon = document.getElementById("icon-sound-on");
+      const offIcon = document.getElementById("icon-sound-off");
+      const statusText = document.getElementById("text-sound-status");
+      if (soundEnabled) {
+        onIcon.classList.remove("hidden");
+        offIcon.classList.add("hidden");
+        statusText.innerText = "Sound: On";
+        playShiftSound();
+      } else {
+        onIcon.classList.add("hidden");
+        offIcon.classList.remove("hidden");
+        statusText.innerText = "Sound: Off";
+      }
+    }
+
+    // ----------------------------------------------------
+    // 3. PHYSICAL GEOMETRY SOLVER
+    // ----------------------------------------------------
+    // Solves the rotation angle of the rear derailleur cage to pull the chain taut.
+    function solveRearDerailleur(Rf, Rr, Xg, Yg) {
+      const L_cage = 60; // Cage length from guide pulley to tension pulley (px)
+      const Rt = 16;     // Tension pulley radius
+      const Rg = 16;     // Guide pulley radius
+      const L_total = 780; // Total physical chain loop length target
+
+      let low = -Math.PI / 2.5; // ~-72 degrees (slanted back)
+      let high = Math.PI / 2;    // ~+90 degrees (slanted forward)
+      let best_phi = 0;
+      let min_err = Infinity;
+
+      // Binary search to find cage angle (phi) that satisfies the chain loop length constraint
+      for (let i = 0; i < 18; i++) {
+        let phi = (low + high) / 2;
+        // Tension pulley center based on cage pivot (Xg, Yg) and cage rotation (phi)
+        let Xt = Xg + L_cage * Math.sin(phi);
+        let Yt = Yg + L_cage * Math.cos(phi);
+
+        // Segment 1: Top run (Chainring top to Cog top)
+        let dx1 = Cxf - Cxr;
+        let dy1 = (Cyf - Rf) - (Cyr - Rr);
+        let L1 = Math.sqrt(dx1*dx1 + dy1*dy1);
+
+        // Segment 2: Cog wrap (Rear cog left back side, roughly 180 degrees)
+        let L2 = Math.PI * Rr * 0.52;
+
+        // Segment 3: Cog bottom-front exit to Guide pulley (back entry)
+        let dx3 = Xg - Cxr;
+        let dy3 = Yg - (Cyr + Rr);
+        let L3 = Math.sqrt(dx3*dx3 + dy3*dy3);
+
+        // Segment 4: Guide pulley wrap (rear-bottom wrap)
+        let L4 = Math.PI * Rg * 0.4;
+
+        // Segment 5: Cage line (between pulleys)
+        let L5 = L_cage;
+
+        // Segment 6: Tension pulley wrap
+        let L6 = Math.PI * Rt * 0.45;
+
+        // Segment 7: Bottom run (Tension pulley bottom to Chainring bottom)
+        let dx7 = Cxf - Xt;
+        let dy7 = (Cyf + Rf) - Yt;
+        let L7 = Math.sqrt(dx7*dx7 + dy7*dy7);
+
+        // Segment 8: Chainring wrap (front right side, roughly 180 degrees)
+        let L8 = Math.PI * Rf * 0.52;
+
+        let total_path_len = L1 + L2 + L3 + L4 + L5 + L6 + L7 + L8;
+        let err = total_path_len - L_total;
+
+        if (Math.abs(err) < min_err) {
+          min_err = Math.abs(err);
+          best_phi = phi;
+        }
+
+        // Adjust search range
+        // Increasing phi moves the tension pulley closer to the front chainring, reducing L7.
+        // Thus, if current path length is too large (err > 0), we want to increase phi (making Xt move right, reducing L7).
+        if (err > 0) {
+          low = phi;
+        } else {
+          high = phi;
+        }
+      }
+      return best_phi;
+    }
+
+    // ----------------------------------------------------
+    // 4. DYNAMIC SVG RENDERING & COG BUILDERS
+    // ----------------------------------------------------
+    // Draws beautiful, high-quality gear cogs with actual teeth profiles.
+    function createGearPath(cx, cy, teeth) {
+      const r_inner = teeth * RAD_SCALE - 3;
+      const r_outer = teeth * RAD_SCALE + 2;
+      let path = "";
+      const step = (Math.PI * 2) / teeth;
+
+      for (let i = 0; i < teeth; i++) {
+        const angle = i * step;
+        const a1 = angle;
+        const a2 = angle + step * 0.3;
+        const a3 = angle + step * 0.5;
+        const a4 = angle + step * 0.8;
+
+        const x1 = cx + r_outer * Math.cos(a1);
+        const y1 = cy + r_outer * Math.sin(a1);
+        const x2 = cx + r_outer * Math.cos(a2);
+        const y2 = cy + r_outer * Math.sin(a2);
+        const x3 = cx + r_inner * Math.cos(a3);
+        const y3 = cy + r_inner * Math.sin(a3);
+        const x4 = cx + r_inner * Math.cos(a4);
+        const y4 = cy + r_inner * Math.sin(a4);
+
+        if (i === 0) path += `M ${x1} ${y1}`;
+        else path += ` L ${x1} ${y1}`;
+        
+        path += ` L ${x2} ${y2} L ${x3} ${y3} L ${x4} ${y4}`;
+      }
+      path += " Z";
+      return path;
+    }
+
+    function buildVisualDrivetrain() {
+      const gs = groupsets[activeGroupsetKey];
+      
+      // 1. Build Cassette (Rear Cogs)
+      const cassetteContainer = document.getElementById("cassette-group");
+      cassetteContainer.innerHTML = "";
+      
+      // Render from largest to smallest, so small cogs stack on top (z-index hierarchy)
+      for (let i = 0; i < gs.rear.length; i++) {
+        const teeth = gs.rear[i];
+        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        path.setAttribute("d", createGearPath(Cxr, Cyr, teeth));
+        path.setAttribute("id", `cog-${i}`);
+        
+        // Highlight active cog
+        if (i === rearIndex) {
+          path.setAttribute("fill", "url(#active-metal-grad)");
+          path.setAttribute("stroke", "#38bdf8");
+          path.setAttribute("stroke-width", "1");
+          path.setAttribute("filter", "url(#glow-effect)");
+          path.setAttribute("opacity", "1");
+        } else {
+          path.setAttribute("fill", "url(#metal-grad)");
+          path.setAttribute("stroke", "#18181b");
+          path.setAttribute("stroke-width", "0.5");
+          path.setAttribute("opacity", "0.4");
+        }
+        cassetteContainer.appendChild(path);
+      }
+
+      // Add a central metal axle cap
+      const fillaxle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      fillaxle.setAttribute("cx", Cxr);
+      fillaxle.setAttribute("cy", Cyr);
+      fillaxle.setAttribute("r", 8);
+      fillaxle.setAttribute("fill", "#27272a");
+      fillaxle.setAttribute("stroke", "#52525b");
+      fillaxle.setAttribute("stroke-width", "2");
+      cassetteContainer.appendChild(fillaxle);
+
+      // 2. Build Chainrings (Front)
+      const chainringsContainer = document.getElementById("chainrings-group");
+      chainringsContainer.innerHTML = "";
+
+      // Render from largest to smallest
+      for (let i = gs.front.length - 1; i >= 0; i--) {
+        const teeth = gs.front[i];
+        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        path.setAttribute("d", createGearPath(Cxf, Cyf, teeth));
+        path.setAttribute("id", `chainring-${i}`);
+
+        if (i === frontIndex) {
+          path.setAttribute("fill", "url(#active-metal-grad)");
+          path.setAttribute("stroke", "#38bdf8");
+          path.setAttribute("stroke-width", "1.5");
+          path.setAttribute("filter", "url(#glow-effect)");
+          path.setAttribute("opacity", "1");
+        } else {
+          path.setAttribute("fill", "url(#metal-grad)");
+          path.setAttribute("stroke", "#27272a");
+          path.setAttribute("stroke-width", "0.5");
+          path.setAttribute("opacity", "0.3");
+        }
+        chainringsContainer.appendChild(path);
+      }
+
+      // Add spindle circle decoration
+      const spindle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      spindle.setAttribute("cx", Cxf);
+      spindle.setAttribute("cy", Cyf);
+      spindle.setAttribute("r", 15);
+      spindle.setAttribute("fill", "#09090b");
+      spindle.setAttribute("stroke", "#3f3f46");
+      spindle.setAttribute("stroke-width", "3");
+      chainringsContainer.appendChild(spindle);
+
+      // Add crank arm representation
+      const crank = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+      crank.setAttribute("x", Cxf - 7);
+      crank.setAttribute("y", Cyf);
+      crank.setAttribute("width", 14);
+      crank.setAttribute("height", 85);
+      crank.setAttribute("rx", 6);
+      crank.setAttribute("fill", "#27272a");
+      crank.setAttribute("stroke", "#3f3f46");
+      crank.setAttribute("stroke-width", "1.5");
+      crank.setAttribute("id", "crank-arm");
+      chainringsContainer.appendChild(crank);
+
+      const pedal = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+      pedal.setAttribute("x", Cxf - 22);
+      pedal.setAttribute("y", Cyf + 85);
+      pedal.setAttribute("width", 44);
+      pedal.setAttribute("height", 10);
+      pedal.setAttribute("rx", 2);
+      pedal.setAttribute("fill", "#52525b");
+      pedal.setAttribute("id", "pedal-pad");
+      chainringsContainer.appendChild(pedal);
+
+      // 3. Build Top-Down visualizer cogs and rings
+      buildTopDownVisualizer();
+    }
+
+    function buildTopDownVisualizer() {
+      const gs = groupsets[activeGroupsetKey];
+      const cogsContainer = document.getElementById("topdown-cogs");
+      const ringsContainer = document.getElementById("topdown-chainrings");
+
+      cogsContainer.innerHTML = "";
+      ringsContainer.innerHTML = "";
+
+      // 12 cogs spaced laterally. Innermost (largest) closest to midline Y=30.
+      const numCogs = gs.rear.length;
+      const yMinCog = 45;
+      const yMaxCog = 100;
+      const cogSpacing = (yMaxCog - yMinCog) / Math.max(1, numCogs - 1);
+
+      for (let i = 0; i < numCogs; i++) {
+        const yPos = yMinCog + i * cogSpacing;
+        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        const cogWidth = 10 + (gs.rear[i] * 0.8);
+        line.setAttribute("x1", 120 - cogWidth);
+        line.setAttribute("y1", yPos);
+        line.setAttribute("x2", 120 + 2);
+        line.setAttribute("y2", yPos);
+        
+        if (i === rearIndex) {
+          line.setAttribute("stroke", "#10b981");
+          line.setAttribute("stroke-width", "5.5");
+          line.setAttribute("filter", "url(#glow-effect)");
+        } else {
+          line.setAttribute("stroke", "#3f3f46");
+          line.setAttribute("stroke-width", "4.5");
+        }
+        line.setAttribute("stroke-linecap", "round");
+        cogsContainer.appendChild(line);
+      }
+
+      // Chainrings in topdown
+      const numRings = gs.front.length;
+      const yMinRing = 62;
+      const yMaxRing = 80;
+      const ringSpacing = numRings > 1 ? (yMaxRing - yMinRing) / (numRings - 1) : 0;
+
+      for (let i = 0; i < numRings; i++) {
+        const yPos = numRings > 1 ? yMinRing + i * ringSpacing : 71;
+        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        const ringWidth = 12 + (gs.front[i] * 0.7);
+        line.setAttribute("x1", 480 - ringWidth);
+        line.setAttribute("y1", yPos);
+        line.setAttribute("x2", 480 + 4);
+        line.setAttribute("y2", yPos);
+
+        if (i === frontIndex) {
+          line.setAttribute("stroke", "#0ea5e9");
+          line.setAttribute("stroke-width", "5");
+          line.setAttribute("filter", "url(#glow-effect)");
+        } else {
+          line.setAttribute("stroke", "#3f3f46");
+          line.setAttribute("stroke-width", "4");
+        }
+        line.setAttribute("stroke-linecap", "round");
+        ringsContainer.appendChild(line);
+      }
+    }
+
+    // ----------------------------------------------------
+    // 5. UPDATE LOOPS & PHYSICS SIMULATION
+    // ----------------------------------------------------
+    let lastTime = 0;
+    
+    function animate(time) {
+      if (!lastTime) lastTime = time;
+      const dt = (time - lastTime) / 1000;
+      lastTime = time;
+
+      const gs = groupsets[activeGroupsetKey];
+      const activeRfTeeth = gs.front[frontIndex];
+      const activeRrTeeth = gs.rear[rearIndex];
+
+      const Rf = activeRfTeeth * RAD_SCALE;
+      const Rr = activeRrTeeth * RAD_SCALE;
+
+      // Target position of front derailleur in side profile
+      const fd_x_target = Cxf - Rf - 6;
+      const fd_y_target = Cyf - Rf - 10;
+      
+      // Interpolate front derailleur position for smooth shifting slide
+      fd_x_current += (fd_x_target - fd_x_current) * 0.15;
+      fd_y_current += (fd_y_target - fd_y_current) * 0.15;
+
+      const fd = document.getElementById("front-derailleur");
+      fd.setAttribute("transform", `translate(${fd_x_current - (Cxf - 50 * RAD_SCALE - 6)}, ${fd_y_current - (Cyf - 50 * RAD_SCALE - 10)})`);
+
+      // Target position of guide pulley based on active rear cog radius
+      const guide_clearance = 23;
+      const theta_guide = 72 * Math.PI / 180; 
+      const rd_gx_target = Cxr + (Rr + guide_clearance) * Math.cos(theta_guide);
+      const rd_gy_target = Cyr + (Rr + guide_clearance) * Math.sin(theta_guide);
+
+      // Interpolate guide pulley coordinates
+      rd_gx_current += (rd_gx_target - rd_gx_current) * 0.15;
+      rd_gy_current += (rd_gy_target - rd_gy_current) * 0.15;
+
+      // Solve for cage angle (phi) based on current guide pulley location
+      const phi = solveRearDerailleur(Rf, Rr, rd_gx_current, rd_gy_current);
+
+      // Place Pulleys
+      const L_cage = 60;
+      const tension_x = rd_gx_current + L_cage * Math.sin(phi);
+      const tension_y = rd_gy_current + L_cage * Math.cos(phi);
+
+      // Render derailleur cage plate
+      const rdCagePlate = document.getElementById("rd-cage-plate");
+      const rdCagePlateFront = document.getElementById("rd-cage-plate-front");
+      const rdPulleyGuide = document.getElementById("pulley-guide");
+      const rdPulleyTension = document.getElementById("pulley-tension");
+
+      rdCagePlate.setAttribute("d", `M ${rd_gx_current} ${rd_gy_current} L ${tension_x} ${tension_y}`);
+      rdCagePlateFront.setAttribute("d", `M ${rd_gx_current} ${rd_gy_current} L ${tension_x} ${tension_y}`);
+
+      // Position the pulleys
+      rdPulleyGuide.setAttribute("transform", `translate(${rd_gx_current - 213}, ${rd_gy_current - 240})`);
+      rdPulleyTension.setAttribute("transform", `translate(${tension_x - 200}, ${tension_y - 300})`);
+
+      // Update Parallelogram linkages
+      const rdLink1 = document.getElementById("rd-link1");
+      const rdLink2 = document.getElementById("rd-link2");
+      const rdPknuckle = document.getElementById("rd-p-knuckle");
+
+      rdLink1.setAttribute("x2", rd_gx_current);
+      rdLink1.setAttribute("y2", rd_gy_current);
+      rdLink2.setAttribute("x2", rd_gx_current + 7);
+      rdLink2.setAttribute("y2", rd_gy_current);
+      rdPknuckle.setAttribute("cx", rd_gx_current);
+      rdPknuckle.setAttribute("cy", rd_gy_current);
+
+      // ----------------------------------------------------
+      // DRAW LOOP CHAIN PATH
+      // ----------------------------------------------------
+      const Rg = 16;
+      const Rt = 16;
+
+      // Tangent points and arcs for S-loop wrap
+      const n1_x = Cxf;
+      const n1_y = Cyf - Rf;
+      const n2_x = Cxr;
+      const n2_y = Cyr - Rr;
+      const n3_x = Cxr - Rr;
+      const n3_y = Cyr;
+      const n4_x = Cxr;
+      const n4_y = Cyr + Rr;
+      const n5_x = rd_gx_current - Rg;
+      const n5_y = rd_gy_current;
+      const n6_x = rd_gx_current;
+      const n6_y = rd_gy_current + Rg;
+      const n7_x = tension_x - Rt;
+      const n7_y = tension_y;
+      const n8_x = tension_x;
+      const n8_y = tension_y + Rt;
+      const n9_x = tension_x + Rt;
+      const n9_y = tension_y;
+      const n10_x = Cxf;
+      const n10_y = Cyf + Rf;
+      const n11_x = Cxf + Rf;
+      const n11_y = Cyf;
+
+      const pathString = `
+        M ${n1_x} ${n1_y}
+        L ${n2_x} ${n2_y}
+        A ${Rr} ${Rr} 0 0 0 ${n3_x} ${n3_y}
+        A ${Rr} ${Rr} 0 0 0 ${n4_x} ${n4_y}
+        L ${n5_x} ${n5_y}
+        A ${Rg} ${Rg} 0 0 0 ${n6_x} ${n6_y}
+        L ${n7_x} ${n7_y}
+        A ${Rt} ${Rt} 0 0 0 ${n8_x} ${n8_y}
+        A ${Rt} ${Rt} 0 0 0 ${n9_x} ${n9_y}
+        L ${n10_x} ${n10_y}
+        A ${Rf} ${Rf} 0 0 0 ${n11_x} ${n11_y}
+        A ${Rf} ${Rf} 0 0 0 ${n1_x} ${n1_y}
+        Z
+      `;
+
+      const chainPath = document.getElementById("chain-path");
+      const chainPathBg = document.getElementById("chain-path-bg");
+      chainPath.setAttribute("d", pathString);
+      chainPathBg.setAttribute("d", pathString);
+
+      // ----------------------------------------------------
+      // SPINNING ROTATION CALCULATIONS
+      // ----------------------------------------------------
+      if (pedaling && cadence > 0) {
+        const omega_front = (cadence * Math.PI * 2) / 60; // rads/s
+        const V_chain = omega_front * Rf; // px/s
+        
+        const omega_rear = V_chain / Rr; // rads/s
+        const omega_pulley = V_chain / Rg;
+
+        const dt_deg_front = (omega_front * dt) * (180 / Math.PI);
+        const dt_deg_rear = (omega_rear * dt) * (180 / Math.PI);
+        const dt_deg_pulley = (omega_pulley * dt) * (180 / Math.PI);
+
+        frontAngle = (frontAngle + dt_deg_front) % 360;
+        rearAngle = (rearAngle + dt_deg_rear) % 360;
+        pulleyAngle = (pulleyAngle + dt_deg_pulley) % 360;
+
+        chainOffset = (chainOffset - V_chain * dt) % 14; 
+        chainPath.style.strokeDashoffset = chainOffset;
+      }
+
+      // Apply rotations to SVG groups
+      const chainringsGroup = document.getElementById("chainrings-group");
+      const cassetteGroup = document.getElementById("cassette-group");
+      const pulleyGuideEl = document.getElementById("pulley-guide");
+      const pulleyTensionEl = document.getElementById("pulley-tension");
+
+      if (chainringsGroup) chainringsGroup.setAttribute("transform", `rotate(${frontAngle}, ${Cxf}, ${Cyf})`);
+      if (cassetteGroup) cassetteGroup.setAttribute("transform", `rotate(${rearAngle}, ${Cxr}, ${Cyr})`);
+      
+      if (pulleyGuideEl) pulleyGuideEl.setAttribute("transform", `translate(${rd_gx_current - 213}, ${rd_gy_current - 240}) rotate(${pulleyAngle}, 213, 240)`);
+      if (pulleyTensionEl) pulleyTensionEl.setAttribute("transform", `translate(${tension_x - 200}, ${tension_y - 300}) rotate(${pulleyAngle}, 200, 300)`);
+
+      // ----------------------------------------------------
+      // TOP-DOWN ALIGNMENT & FRONT DERAILLEUR RUB
+      // ----------------------------------------------------
+      const numCogs = gs.rear.length;
+      const yMinCog = 45;
+      const yMaxCog = 100;
+      const cogSpacing = (yMaxCog - yMinCog) / Math.max(1, numCogs - 1);
+      const activeCogY = yMinCog + rearIndex * cogSpacing;
+
+      const numRings = gs.front.length;
+      const yMinRing = 62;
+      const yMaxRing = 80;
+      const ringSpacing = numRings > 1 ? (yMaxRing - yMinRing) / (numRings - 1) : 0;
+      const activeRingY = numRings > 1 ? yMinRing + frontIndex * ringSpacing : 71;
+
+      // Update chainline in topdown
+      const tdChain = document.getElementById("topdown-chain");
+      tdChain.setAttribute("y1", activeCogY);
+      tdChain.setAttribute("y2", activeRingY);
+
+      // Slide Front Derailleur Cage in Top View
+      const tdFdCage = document.getElementById("topdown-fd-cage");
+      tdFdCage.setAttribute("d", `M 465 ${activeRingY} L 495 ${activeRingY}`);
+
+      // Calculate chain offset angle in degrees
+      const frameDist = 360;
+      const lateralDelta = activeRingY - activeCogY;
+      const angleRads = Math.atan2(lateralDelta, frameDist);
+      const angleDegs = angleRads * (180 / Math.PI);
+      
+      const angleText = document.getElementById("txt-angle-degrees");
+      angleText.innerText = `Angle: ${Math.abs(angleDegs).toFixed(1)}°`;
+
+      // Check for Front Derailleur cage rubbing
+      const rubbingSpark = document.getElementById("topdown-fd-rub");
+      const frictionLimit = 3.2; 
+      
+      if (gs.front.length > 1 && Math.abs(angleDegs) > frictionLimit) {
+        tdChain.setAttribute("stroke", "#ef4444"); 
+        rubbingSpark.setAttribute("cy", activeRingY);
+        rubbingSpark.setAttribute("opacity", (0.3 + 0.7 * Math.abs(Math.sin(time * 0.01))).toString()); 
+      } else {
+        tdChain.setAttribute("stroke", "#38bdf8"); 
+        rubbingSpark.setAttribute("opacity", "0");
+      }
+
+      // Check active Challenge progress
+      if (activeChallenge) {
+        checkChallengeCompletion();
+      }
+
+      // Confetti render loop
+      if (confettiActive) {
+        drawConfetti();
+      }
+
+      requestAnimationFrame(animate);
+    }
+
+    // Start Loop
+    requestAnimationFrame(animate);
+
+    // ----------------------------------------------------
+    // 6. GEAR INTERACTION & SHIFTING CONTROLS
+    // ----------------------------------------------------
+    function shiftFront(direction) {
+      const gs = groupsets[activeGroupsetKey];
+      const maxIndex = gs.front.length - 1;
+      let newIndex = frontIndex + direction;
+
+      if (newIndex >= 0 && newIndex <= maxIndex) {
+        frontIndex = newIndex;
+        playShiftSound();
+        triggerFlash();
+        updateUI();
+      }
+    }
+
+    function shiftRear(direction) {
+      const gs = groupsets[activeGroupsetKey];
+      const maxIndex = gs.rear.length - 1;
+      let newIndex = rearIndex - direction;
+
+      if (newIndex >= 0 && newIndex <= maxIndex) {
+        rearIndex = newIndex;
+        playShiftSound();
+        triggerFlash();
+        updateUI();
+      }
+    }
+
+    function setCadence(newCadence) {
+      cadence = newCadence;
+      
+      // Update UI buttons styling
+      document.getElementById("btn-cadence-0").className = "flex-1 py-1.5 rounded-lg border border-zinc-800 text-xs font-semibold transition hover:bg-zinc-800";
+      document.getElementById("btn-cadence-60").className = "flex-1 py-1.5 rounded-lg border border-zinc-800 text-xs font-semibold transition hover:bg-zinc-800";
+      document.getElementById("btn-cadence-90").className = "flex-1 py-1.5 rounded-lg border border-zinc-800 text-xs font-semibold transition hover:bg-zinc-800";
+      document.getElementById("btn-cadence-120").className = "flex-1 py-1.5 rounded-lg border border-zinc-800 text-xs font-semibold transition hover:bg-zinc-800";
+
+      document.getElementById(`btn-cadence-${newCadence}`).className = "flex-1 py-1.5 rounded-lg border border-zinc-800 text-xs font-semibold transition hover:bg-zinc-800 bg-sky-500/10 border-sky-500/30 text-sky-400";
+      document.getElementById("text-cadence").innerText = `${newCadence} RPM`;
+
+      pedaling = newCadence > 0;
+    }
+
+    function switchGroupset(key) {
+      activeGroupsetKey = key;
+      const gs = groupsets[key];
+
+      frontIndex = gs.front.length - 1; 
+      rearIndex = gs.rear.length - 1; 
+
+      const leftShifter = document.getElementById("left-shifter-card");
+      const btnFrontUp = document.getElementById("btn-front-up");
+      const btnFrontDown = document.getElementById("btn-front-down");
+      const indicatorFrontGear = document.getElementById("indicator-front-gear");
+
+      if (gs.front.length === 1) {
+        leftShifter.classList.add("opacity-40", "cursor-not-allowed");
+        btnFrontUp.disabled = true;
+        btnFrontDown.disabled = true;
+        indicatorFrontGear.innerText = "N/A";
+      } else {
+        leftShifter.classList.remove("opacity-40", "cursor-not-allowed");
+        btnFrontUp.disabled = false;
+        btnFrontDown.disabled = false;
+        indicatorFrontGear.innerText = (frontIndex + 1).toString();
+      }
+
+      buildVisualDrivetrain();
+      updateGroupsetButtons();
+      updateUI();
+    }
+
+    function updateGroupsetButtons() {
+      const container = document.getElementById("groupset-buttons-container");
+      container.innerHTML = "";
+
+      Object.keys(groupsets).forEach(key => {
+        const gs = groupsets[key];
+        const isActive = key === activeGroupsetKey;
+        
+        let buttonClass = `flex flex-col text-left p-3 rounded-xl border transition-all duration-300 ${gs.btnClass} `;
+        
+        if (isActive) {
+          if (gs.accentColor === "sky") buttonClass += "bg-sky-500/10 border-sky-500/40 shadow-lg shadow-sky-500/5";
+          else if (gs.accentColor === "emerald") buttonClass += "bg-emerald-500/10 border-emerald-500/40 shadow-lg shadow-emerald-500/5";
+          else if (gs.accentColor === "amber") buttonClass += "bg-amber-500/10 border-amber-500/40 shadow-lg shadow-amber-500/5";
+        } else {
+          buttonClass += "border-zinc-800/80 bg-zinc-950/40 opacity-70 hover:opacity-100 hover:bg-zinc-900/30";
+        }
+
+        const teethSummary = gs.front.length > 1 
+          ? `Front: ${gs.front[0]}T-${gs.front[gs.front.length-1]}T | Rear: ${gs.rear[gs.rear.length-1]}T-${gs.rear[0]}T`
+          : `Front: Single ${gs.front[0]}T | Rear: ${gs.rear[gs.rear.length-1]}T-${gs.rear[0]}T`;
+
+        container.innerHTML += `
+          <button onclick="switchGroupset('${key}')" class="${buttonClass}">
+            <div class="flex justify-between items-center w-full">
+              <span class="text-xs font-bold text-white">${gs.name}</span>
+              <span class="text-3xs font-mono px-2 py-0.5 rounded-full ${isActive ? gs.accentClass : 'bg-zinc-900 text-zinc-500'}">${gs.type}</span>
+            </div>
+            <span class="text-3xs text-zinc-500 font-mono mt-1">${teethSummary}</span>
+          </button>
+        `;
+      });
+
+      document.getElementById("groupset-details-text").innerText = groupsets[activeGroupsetKey].description;
+      document.getElementById("badge-groupset-name").innerText = groupsets[activeGroupsetKey].name;
+
+      const visCard = document.getElementById("main-visualizer-card");
+      visCard.className = "bg-zinc-900/60 border border-zinc-800 rounded-2xl p-4 md:p-6 backdrop-blur-md flex flex-col gap-4 relative overflow-hidden transition-all duration-500";
+      if (activeGroupsetKey === 'tourney') visCard.classList.add("glow-blue");
+      else if (activeGroupsetKey === 'tiagra') visCard.classList.add("glow-blue"); 
+      else if (activeGroupsetKey === 'deore') visCard.classList.add("glow-amber");
+    }
+
+    function triggerFlash() {
+      const flash = document.getElementById("shift-flash");
+      flash.classList.remove("opacity-0");
+      flash.classList.add("opacity-100");
+      setTimeout(() => {
+        flash.classList.remove("opacity-100");
+        flash.classList.add("opacity-0");
+      }, 80);
+    }
+
+    // ----------------------------------------------------
+    // 7. REAL-TIME CALCULATIONS & DYNAMIC COPY
+    // ----------------------------------------------------
+    function updateUI() {
+      const gs = groupsets[activeGroupsetKey];
+      const activeRfTeeth = gs.front[frontIndex];
+      const activeRrTeeth = gs.rear[rearIndex];
+
+      if (gs.front.length > 1) {
+        document.getElementById("indicator-front-gear").innerText = `${frontIndex + 1} (${activeRfTeeth}T)`;
+      }
+      document.getElementById("indicator-rear-gear").innerText = `${gs.rear.length - rearIndex} (${activeRrTeeth}T)`;
+
+      for (let i = 0; i < gs.rear.length; i++) {
+        const cog = document.getElementById(`cog-${i}`);
+        if (cog) {
+          if (i === rearIndex) {
+            cog.setAttribute("fill", "url(#active-metal-grad)");
+            cog.setAttribute("stroke", "#38bdf8");
+            cog.setAttribute("filter", "url(#glow-effect)");
+            cog.setAttribute("opacity", "1");
+          } else {
+            cog.setAttribute("fill", "url(#metal-grad)");
+            cog.setAttribute("stroke", "#18181b");
+            cog.removeAttribute("filter");
+            cog.setAttribute("opacity", "0.3");
+          }
+        }
+      }
+
+      for (let i = 0; i < gs.front.length; i++) {
+        const ring = document.getElementById(`chainring-${i}`);
+        if (ring) {
+          if (i === frontIndex) {
+            ring.setAttribute("fill", "url(#active-metal-grad)");
+            ring.setAttribute("stroke", "#38bdf8");
+            ring.setAttribute("filter", "url(#glow-effect)");
+            ring.setAttribute("opacity", "1");
+          } else {
+            ring.setAttribute("fill", "url(#metal-grad)");
+            ring.setAttribute("stroke", "#27272a");
+            ring.removeAttribute("filter");
+            ring.setAttribute("opacity", "0.25");
+          }
+        }
+      }
+
+      buildTopDownVisualizer();
+
+      const ratio = activeRfTeeth / activeRrTeeth;
+      document.getElementById("text-gear-ratio").innerText = `Ratio: ${ratio.toFixed(2)}`;
+
+      const wheelCircumference = 2.1; 
+      const speedKmh = (cadence * ratio * wheelCircumference * 60) / 1000;
+      
+      document.getElementById("text-speed").innerText = speedKmh.toFixed(1);
+      const speedGaugeFill = document.getElementById("gauge-speed-fill");
+      const maxSpeed = 60;
+      const speedPercent = Math.min(speedKmh / maxSpeed, 1);
+      speedGaugeFill.style.strokeDashoffset = (163.3 - 163.3 * speedPercent).toString();
+
+      let effortText = "MEDIUM";
+      let effortColor = "#10b981"; 
+      let effortPercent = 0.5;
+
+      if (ratio > 3.2) {
+        effortText = "VERY HEAVY";
+        effortColor = "#f43f5e"; 
+        effortPercent = 0.9;
+      } else if (ratio > 2.5) {
+        effortText = "HEAVY";
+        effortColor = "#f59e0b"; 
+        effortPercent = 0.7;
+      } else if (ratio < 1.3) {
+        effortText = "VERY LIGHT";
+        effortColor = "#38bdf8"; 
+        effortPercent = 0.15;
+      } else if (ratio < 1.7) {
+        effortText = "LIGHT";
+        effortColor = "#10b981"; 
+        effortPercent = 0.35;
+      }
+
+      document.getElementById("text-effort").innerText = effortText;
+      const effortGaugeFill = document.getElementById("gauge-effort-fill");
+      effortGaugeFill.style.stroke = effortColor;
+      effortGaugeFill.style.strokeDashoffset = (163.3 - 163.3 * effortPercent).toString();
+
+      let explainerTitle = "Smooth Sailing";
+      let explainerDesc = "Ideal for rolling hills and maintaining a steady rhythm. The chain is running straight and efficient.";
+      let statusBadgeText = "Smooth Sailing";
+      let badgeClass = "bg-emerald-500/10 text-emerald-400 border-emerald-500/20";
+      let boxBorderClass = "border-zinc-800/80 bg-zinc-950/40";
+      let boxTitleClass = "text-emerald-400";
+
+      let isCrossChaining = false;
+      const numFrontRings = gs.front.length;
+      const numRearCogs = gs.rear.length;
+
+      const yMinCog = 45;
+      const yMaxCog = 100;
+      const cogSpacing = (yMaxCog - yMinCog) / Math.max(1, numRearCogs - 1);
+      const activeCogY = yMinCog + rearIndex * cogSpacing;
+
+      const yMinRing = 62;
+      const yMaxRing = 80;
+      const ringSpacing = numFrontRings > 1 ? (yMaxRing - yMinRing) / (numFrontRings - 1) : 0;
+      const activeRingY = numFrontRings > 1 ? yMinRing + frontIndex * ringSpacing : 71;
+
+      const frameDist = 360;
+      const lateralDelta = activeRingY - activeCogY;
+      const angleDegs = (Math.atan2(lateralDelta, frameDist)) * (180 / Math.PI);
+      const frictionLimit = 3.2; 
+
+      if (numFrontRings > 1 && Math.abs(angleDegs) > frictionLimit) {
+        isCrossChaining = true;
+      }
+
+      if (isCrossChaining) {
+        explainerTitle = "⚠️ Cross-Chaining Rub Alert!";
+        if (frontIndex === numFrontRings - 1) { 
+          explainerDesc = "Your chain is stretching diagonally (Big Chainring + Biggest Cogs). The chain rubs against the front derailleur bracket, leading to noisy riding and high drivetrain friction.";
+        } else { 
+          explainerDesc = "Your chain is slack and stretching diagonally (Small Chainring + Smallest Cogs). This triggers high gear wear, potential chain slaps, and annoying grinding noises against the front cage.";
+        }
+        statusBadgeText = "Cross-Chaining Alert!";
+        badgeClass = "bg-rose-500/10 text-rose-400 border-rose-500/20 animate-pulse";
+        boxBorderClass = "border-rose-500/30 bg-rose-500/5 glow-red";
+        boxTitleClass = "text-rose-400";
+      } else if (ratio > 3.8) {
+        explainerTitle = "⚡ Speed Demon Mode";
+        explainerDesc = "Maximum gears for downhill descents, heavy flats, or final sprints. Requires high leg torque, generating maximum power to sustain high velocities.";
+        statusBadgeText = "High Speed Sprint";
+        badgeClass = "bg-sky-500/10 text-sky-400 border-sky-500/20";
+        boxTitleClass = "text-sky-400";
+      } else if (ratio < 0.9) {
+        explainerTitle = "🧗 The Mountain Goat";
+        explainerDesc = "Super light gear setup. Leg speed (cadence) is converted to massive climbing torque. Allows you to sit and pedal comfortably up 15%+ alpine gradients.";
+        statusBadgeText = "Climbing Ratio";
+        badgeClass = "bg-amber-500/10 text-amber-400 border-amber-500/20";
+        boxTitleClass = "text-amber-400";
+      } else if (ratio < 1.35) {
+        explainerTitle = "⛰️ Easy Ascent Mode";
+        explainerDesc = "Excellent for standard climbs and moderately steep hills. Low leg strain to conserve endurance on long ascents.";
+        statusBadgeText = "Hill Climbing";
+        badgeClass = "bg-amber-500/10 text-amber-400 border-amber-500/20";
+        boxTitleClass = "text-amber-400";
+      }
+
+      document.getElementById("badge-chain-status").innerText = statusBadgeText;
+      document.getElementById("badge-chain-status").className = `inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${badgeClass}`;
+      
+      const expBox = document.getElementById("explainer-box");
+      expBox.className = `p-4 rounded-xl border transition-all duration-300 ${boxBorderClass}`;
+      
+      const expTitle = document.getElementById("explainer-title");
+      expTitle.innerText = explainerTitle;
+      expTitle.className = `text-sm font-bold flex items-center gap-1.5 ${boxTitleClass}`;
+      
+      document.getElementById("explainer-desc").innerText = explainerDesc;
+    }
+
+    // ----------------------------------------------------
+    // 8. CHALLENGE MODE MODULE (Shimano Shifting Academy)
+    // ----------------------------------------------------
+    function startChallenge(type) {
+      activeChallenge = type;
+      setCadence(90); 
+
+      if (type === 'climb') {
+        showChallengeBanner("Climbing Wall: Shift to Easiest Gear Combo (Small Ring + Big Cog).");
+        highlightChallengeCard('climb');
+      } else if (type === 'sprint') {
+        showChallengeBanner("Downhill Sprint: Shift to Hardest Gear Combo (Big Ring + Small Cog).");
+        highlightChallengeCard('sprint');
+      } else if (type === 'rub') {
+        if (activeGroupsetKey === 'deore') {
+          switchGroupset('tiagra'); 
+        }
+        const gs = groupsets[activeGroupsetKey];
+        frontIndex = gs.front.length - 1; 
+        rearIndex = 0; 
+        updateUI();
+        showChallengeBanner("Cross-Chaining Warning! Adjust shifters to straighten the chainline (Medium combo).");
+        highlightChallengeCard('rub');
+      } else if (type === 'startup') {
+        showChallengeBanner("Stoplight Startup: Shift to moderate starting gear (Ratio 1.7 to 2.1).");
+        highlightChallengeCard('startup');
+      }
+    }
+
+    function showChallengeBanner(instructionText) {
+      const banner = document.getElementById("challenge-status-banner");
+      const text = document.getElementById("txt-challenge-instruction");
+      banner.classList.remove("hidden");
+      banner.classList.add("flex");
+      text.innerText = instructionText;
+    }
+
+    function highlightChallengeCard(type) {
+      ['climb', 'sprint', 'rub', 'startup'].forEach(id => {
+        const el = document.getElementById(`challenge-card-${id}`);
+        el.classList.remove("border-sky-500", "bg-sky-950/20", "border-emerald-500", "bg-emerald-950/20");
+        el.classList.add("border-zinc-800", "bg-zinc-900/50");
+      });
+      const activeEl = document.getElementById(`challenge-card-${type}`);
+      if (activeEl) {
+        activeEl.classList.remove("border-zinc-800", "bg-zinc-900/50");
+        activeEl.classList.add("border-amber-500", "bg-amber-950/10");
+      }
+    }
+
+    function quitChallenge() {
+      activeChallenge = null;
+      document.getElementById("challenge-status-banner").classList.add("hidden");
+      document.getElementById("challenge-status-banner").classList.remove("flex");
+      highlightChallengeCard(''); 
+    }
+
+    function checkChallengeCompletion() {
+      const gs = groupsets[activeGroupsetKey];
+      const activeRfTeeth = gs.front[frontIndex];
+      const activeRrTeeth = gs.rear[rearIndex];
+      const ratio = activeRfTeeth / activeRrTeeth;
+
+      let success = false;
+
+      if (activeChallenge === 'climb') {
+        if (frontIndex === 0 && rearIndex === 0) {
+          success = true;
+        }
+      } else if (activeChallenge === 'sprint') {
+        if (frontIndex === gs.front.length - 1 && rearIndex === gs.rear.length - 1) {
+          success = true;
+        }
+      } else if (activeChallenge === 'rub') {
+        const numFrontRings = gs.front.length;
+        const numRearCogs = gs.rear.length;
+        
+        const yMinCog = 45;
+        const yMaxCog = 100;
+        const cogSpacing = (yMaxCog - yMinCog) / Math.max(1, numRearCogs - 1);
+        const activeCogY = yMinCog + rearIndex * cogSpacing;
+
+        const yMinRing = 62;
+        const yMaxRing = 80;
+        const ringSpacing = numFrontRings > 1 ? (yMaxRing - yMinRing) / (numFrontRings - 1) : 0;
+        const activeRingY = numFrontRings > 1 ? yMinRing + frontIndex * ringSpacing : 71;
+
+        const frameDist = 360;
+        const lateralDelta = activeRingY - activeCogY;
+        const angleDegs = (Math.atan2(lateralDelta, frameDist)) * (180 / Math.PI);
+        const frictionLimit = 3.2;
+
+        if (Math.abs(angleDegs) <= frictionLimit) {
+          success = true;
+        }
+      } else if (activeChallenge === 'startup') {
+        if (ratio >= 1.7 && ratio <= 2.15) {
+          success = true;
+        }
+      }
+
+      if (success) {
+        triggerSuccessCelebration();
+        quitChallenge();
+      }
+    }
+
+    // ----------------------------------------------------
+    // 9. CELEBRATION CONFETTI MODULE
+    // ----------------------------------------------------
+    function triggerSuccessCelebration() {
+      confettiActive = true;
+      const canvas = document.getElementById("confetti-canvas");
+      canvas.classList.remove("hidden");
+      
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+
+      confetti = [];
+      const colors = ["#38bdf8", "#10b981", "#f59e0b", "#f43f5e", "#a855f7"];
+
+      for (let i = 0; i < 100; i++) {
+        confetti.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * -100 - 20,
+          size: Math.random() * 8 + 6,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          speedY: Math.random() * 5 + 3,
+          speedX: Math.random() * 3 - 1.5,
+          rotation: Math.random() * 360,
+          rotationSpeed: Math.random() * 4 - 2
+        });
+      }
+
+      setTimeout(() => playShiftSound(), 0);
+      setTimeout(() => playShiftSound(), 100);
+      setTimeout(() => playShiftSound(), 200);
+
+      setTimeout(() => {
+        confettiActive = false;
+        canvas.classList.add("hidden");
+      }, 4000);
+    }
+
+    function drawConfetti() {
+      const canvas = document.getElementById("confetti-canvas");
+      const ctx = canvas.getContext("2d");
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      confetti.forEach(p => {
+        p.y += p.speedY;
+        p.x += p.speedX;
+        p.rotation += p.rotationSpeed;
+
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rotation * Math.PI / 180);
+        ctx.fillStyle = p.color;
+        ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+        ctx.restore();
+      });
+    }
+
+    window.addEventListener('resize', () => {
+      if (confettiActive) {
+        const canvas = document.getElementById("confetti-canvas");
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      }
+    });
+
+    // ----------------------------------------------------
+    // 10. INITIALIZATION
+    // ----------------------------------------------------
+    switchGroupset('tiagra');
+  </script>
+</body>
+</html>
